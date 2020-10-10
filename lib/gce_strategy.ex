@@ -65,6 +65,8 @@ defmodule Cluster.Strategy.GoogleComputeEngine do
       |> List.last()
 
     release_name = get_release_name(state)
+    gcp_region = get_gcp_region(state)
+    gcp_project_id = get_gcp_project_id(state)
 
     headers = [{'Authorization', 'Bearer #{auth_token}'}]
 
@@ -88,7 +90,9 @@ defmodule Cluster.Strategy.GoogleComputeEngine do
             |> String.split("/")
             |> List.last()
 
-          node_name = :"#{release_name}@#{instance_name}"
+          node_name =
+            :"#{release_name}@#{instance_name}.#{gcp_region}.c.#{gcp_project_id}.internal"
+
           Cluster.Logger.debug(:gce, "   - Found node: #{inspect(node_name)}")
 
           node_name
@@ -115,6 +119,26 @@ defmodule Cluster.Strategy.GoogleComputeEngine do
         Cluster.Logger.warn(:gce, ":release_name not set in #{__MODULE__} config. Using default.")
 
         @default_release_name
+
+      name ->
+        name
+    end
+  end
+
+  defp get_gcp_region(%{config: config}) do
+    case Keyword.get(config, :gcp_region) do
+      nil ->
+        raise ArgumentError, message: ":gcp_region not set in #{__MODULE__} config."
+
+      name ->
+        name
+    end
+  end
+
+  defp get_gcp_project_id(%{config: config}) do
+    case Keyword.get(config, :gcp_project_id) do
+      nil ->
+        raise ArgumentError, message: ":gcp_project_id not set in #{__MODULE__} config."
 
       name ->
         name
